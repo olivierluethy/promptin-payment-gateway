@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Middleware\HandleUnauthenticated;
 
 // -----------------------------
 // Public Routes
@@ -24,7 +25,7 @@ Route::get('/products', [ProductController::class, 'index']);
 // -----------------------------
 // Authenticated Routes (Sanctum Token required)
 // -----------------------------
-Route::middleware('handle.unauthenticated')->group(function () {
+Route::middleware(HandleUnauthenticated::class)->group(function () {
 
     // Get logged-in user info
     Route::get('/me', [AuthController::class, 'me']);
