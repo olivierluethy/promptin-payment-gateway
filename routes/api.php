@@ -7,7 +7,6 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Middleware\HandleUnauthenticated;
 
 // -----------------------------
 // Public Routes
@@ -25,7 +24,8 @@ Route::get('/products', [ProductController::class, 'index']);
 // -----------------------------
 // Authenticated Routes (Sanctum Token required)
 // -----------------------------
-Route::middleware(HandleUnauthenticated::class)->group(function () {
+
+Route::middleware('auth:sanctum')->group(function () {
 
     // Get logged-in user info
     Route::get('/me', [AuthController::class, 'me']);
@@ -39,5 +39,6 @@ Route::middleware(HandleUnauthenticated::class)->group(function () {
     // Subscribe / Checkout with Stripe
     Route::post('/checkout/{planId}', [CheckoutController::class, 'checkout']);
 });
-// Stripe Webhook (public, keine Auth nötig)
+
+// Stripe Webhook (public, no auth needed)
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
