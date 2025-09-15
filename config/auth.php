@@ -111,5 +111,14 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    /*
+        |--------------------------------------------------------------------------
+        | Authentication Redirect
+        |--------------------------------------------------------------------------
+        |
+        | Define the route to redirect unauthenticated users to.
+        |
+        */
 
+    'redirect_to' => '/login',
 ];

@@ -259,4 +259,28 @@ class AuthController extends Controller
             'user' => $user
         ]);
     }
+
+    public function dashboard(Request $request)
+    {
+        $user = $request->user();
+
+        // Fetch the user's active subscription (assuming a subscriptions table)
+        $subscription = \DB::table('subscriptions')
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->first();
+
+        // Mock plan data if no subscription exists (adjust based on your setup)
+        $plan = null;
+        if ($subscription) {
+            $plan = \DB::table('plans')
+                ->where('id', $subscription->plan_id)
+                ->first();
+        }
+
+        return view('auth.dashboard', [
+            'user' => $user,
+            'plan' => $plan
+        ]);
+    }
 }
