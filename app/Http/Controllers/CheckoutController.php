@@ -16,6 +16,7 @@ class CheckoutController extends Controller
 
         $stripe = new StripeClient(env('STRIPE_SECRET'));
 
+        // Stripe Customer anlegen, falls nicht vorhanden
         if (!$user->stripe_customer_id) {
             $customer = $stripe->customers->create([
                 'email' => $user->email,
@@ -25,6 +26,7 @@ class CheckoutController extends Controller
             $user->save();
         }
 
+        // Checkout Session erstellen
         $session = $stripe->checkout->sessions->create([
             'customer' => $user->stripe_customer_id,
             'line_items' => [
@@ -43,4 +45,44 @@ class CheckoutController extends Controller
         ]);
     }
 
+    /**
+     * Success Page für Frontend
+     */
+    public function success(Request $request)
+    {
+        $sessionId = $request->query('session_id');
+
+        $stripe = new StripeClient(env('STRIPE_SECRET'));
+        $session = $stripe->checkout->sessions->retrieve($sessionId, [
+            'expand' => ['subscription']
+        ]);
+
+        $user = $request->user();
+        $plan = Plan::where('stripe_price_id', $session->line_items->data[0]->price->id ?? null)->first();
+
+        if ($plan && $session->subscription) {
+            $user->subscriptions()->create([
+                'plan_id' => $plan->id,
+                'status' => 'active',
+                'starts_at' => now(),
+                'expires_at' => null, // ggf. aus Stripe-Daten ableiten
+            ]);
+        }
+
+        return view('checkout.success', [
+            'message' => 'Vielen Dank für Ihren Einkauf!',
+            'session_id' => $sessionId,
+        ]);
+    }
+
+
+    /**
+     * Cancel Page (optional)
+     */
+    public function cancel()
+    {
+        return view('checkout.cancel', [
+            'message' => 'Der Checkout wurde abgebrochen.',
+        ]);
+    }
 }

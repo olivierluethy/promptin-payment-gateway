@@ -90,6 +90,17 @@ CREATE TABLE `personal_access_tokens` (
     KEY `personal_access_tokens_tokenable_type_tokenable_id_index` (`tokenable_type`, `tokenable_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+-- Add refresh_tokens table for session persistence
+CREATE TABLE refresh_tokens (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
 ALTER TABLE
     subscriptions
 ADD
@@ -109,7 +120,16 @@ VALUES ('PromptIn Subscription', 'promptin_subscription', 'Abos für PromptIn');
 -- Pläne einfügen (mit Stripe Price IDs)
 INSERT INTO plans (product_id, name, stripe_price_id, default_billing_type)
 VALUES 
-(1, 'Basic Monthly', 'price_123abc', 'price_1S24tdGCiPyXR7LX0IioJH6G'),
-(2, 'Basic Yearly', 'price_456def', 'price_1S24v2GCiPyXR7LXjrEVd8Vv'),
-(3, 'Pro Monthly', 'price_789ghi', 'price_1S24wnGCiPyXR7LXDBJXkvc6'),
-(4, 'Pro Yearly', 'price_101jkl', 'price_1S24x7GCiPyXR7LXkVm8d8HH');
+(1, 'Basic Monthly', 'price_1S24tdGCiPyXR7LX0IioJH6G', 'monthly'),
+(1, 'Basic Yearly',  'price_1S24v2GCiPyXR7LXjrEVd8Vv', 'yearly'),
+(1, 'Pro Monthly',   'price_1S24wnGCiPyXR7LXDBJXkvc6', 'monthly'),
+(1, 'Pro Yearly',    'price_1S24x7GCiPyXR7LXkVm8d8HH', 'yearly');
+
+
+-- Pläne einfügen (mit Stripe Price IDs) - Testing
+INSERT INTO plans (product_id, name, stripe_price_id, default_billing_type)
+VALUES 
+(1, 'Basic Monthly', 'price_1S273l7L878EJ8iQicYZYi0f', 'monthly'),
+(1, 'Basic Yearly',  'price_1S275P7L878EJ8iQwCxiAO80', 'yearly'),
+(1, 'Pro Monthly',   'price_1S275q7L878EJ8iQZYXVrApZ', 'monthly'),
+(1, 'Pro Yearly',    'price_1S276I7L878EJ8iQxTXWGAbv', 'yearly');

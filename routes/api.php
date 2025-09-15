@@ -18,6 +18,12 @@ Route::post('/register', [AuthController::class, 'register']);
 // Login
 Route::post('/login', [AuthController::class, 'login']);
 
+// Password Reset (Add this to support password reset functionality)
+Route::post('/password-reset', [AuthController::class, 'resetPassword']);
+
+// Refresh Token (Public, as it doesn't require an access token)
+Route::post('/refresh', [AuthController::class, 'refresh']);
+
 // List all products & plans (public)
 Route::get('/products', [ProductController::class, 'index']);
 
@@ -26,12 +32,14 @@ Route::get('/products', [ProductController::class, 'index']);
 // -----------------------------
 
 Route::middleware('auth:sanctum')->group(function () {
-
     // Get logged-in user info
     Route::get('/me', [AuthController::class, 'me']);
 
     // Logout (delete token)
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Validate Token
+    Route::get('/validate-token', [AuthController::class, 'validateToken']);
 
     // List user's subscriptions
     Route::get('/subscriptions', [SubscriptionController::class, 'index']);
