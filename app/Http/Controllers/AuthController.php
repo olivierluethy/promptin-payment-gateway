@@ -10,6 +10,7 @@ use App\Mail\WelcomeMail;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use App\Mail\ResetPasswordMail;
 use Carbon\Carbon;
 
 class AuthController extends Controller
@@ -159,18 +160,35 @@ class AuthController extends Controller
             'email' => 'required|email'
         ]);
 
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $user = User::where('email', $request->email)->first();
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json(['message' => 'Password reset email sent!'], 200);
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Benutzer mit dieser E-Mail existiert nicht.']
+            ]);
         }
 
-        throw ValidationException::withMessages([
-            'email' => [__($status)]
-        ]);
+        // Token erzeugen
+        $token = Str::random(60);
+
+        // Token in DB speichern (password_resets)
+        \DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'email' => $user->email,
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        // Mail verschicken
+        Mail::to($user->email)->send(new ResetPasswordMail($token, $user->email));
+
+        return response()->json([
+            'message' => 'Password reset email sent!'
+        ], 200);
     }
+
 
     public function changePassword(Request $request)
     {
@@ -202,5 +220,31 @@ class AuthController extends Controller
             'message' => 'Passwort erfolgreich geändert. Bitte melde dich erneut an.',
         ]);
     }
+    public function resetPasswordConfirm(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
 
+        $passwordReset = \DB::table('password_resets')
+            ->where('email', $request->email)
+            ->where('created_at', '>=', now()->subHours(1)) // Token valid for 1 hour
+            ->first();
+
+        if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
+            throw ValidationException::withMessages([
+                'email' => ['Ungültiger oder abgelaufener Token.'] // Updated error message
+            ]);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        \DB::table('password_resets')->where('email', $request->email)->delete();
+
+        return redirect('/login')->with('status', 'Passwort erfolgreich geändert. Bitte melde dich an.');
+    }
 }
