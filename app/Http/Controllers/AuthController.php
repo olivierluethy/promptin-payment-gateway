@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use App\Mail\WelcomeMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -27,6 +29,9 @@ class AuthController extends Controller
             'password' => Hash::make($request->password)
         ]);
 
+        // E-Mail verschicken
+        Mail::to($user->email)->send(new WelcomeMail($user));
+
         $token = $user->createToken('api-token')->plainTextToken;
         $refreshToken = $this->generateRefreshToken($user);
 
@@ -47,11 +52,12 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::make($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Invalid credentials.']
             ]);
         }
+
 
         $token = $user->createToken('api-token')->plainTextToken;
         $refreshToken = $this->generateRefreshToken($user);

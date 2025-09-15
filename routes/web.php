@@ -13,3 +13,8 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/test-mail', function () {
+    \Mail::to('business.olivierthomas@gmail.com')->send(new \App\Mail\TestMail());
+    return 'Test email sent!';
+});
