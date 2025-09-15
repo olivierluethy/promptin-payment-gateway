@@ -235,7 +235,7 @@ class AuthController extends Controller
 
         if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
             throw ValidationException::withMessages([
-                'email' => ['Ungültiger oder abgelaufener Token.'] // Updated error message
+                'email' => ['Ungültiger oder abgelaufener Token.']
             ]);
         }
 
@@ -243,8 +243,12 @@ class AuthController extends Controller
         $user->password = Hash::make($request->password);
         $user->save();
 
+        // Token löschen
         \DB::table('password_resets')->where('email', $request->email)->delete();
 
-        return redirect('/login')->with('status', 'Passwort erfolgreich geändert. Bitte melde dich an.');
+        // Render the confirmation page
+        return view('auth.password_reset_success', [
+            'user' => $user
+        ]);
     }
 }
