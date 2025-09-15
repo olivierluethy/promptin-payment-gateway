@@ -240,6 +240,14 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
+
+        // Check if the new password is the same as the current password
+        if (Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Das neue Passwort darf nicht mit dem aktuellen Passwort übereinstimmen.']
+            ]);
+        }
+
         $user->password = Hash::make($request->password);
         $user->save();
 

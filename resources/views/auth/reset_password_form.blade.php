@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Passwort zurücksetzen</title>
     <style>
@@ -35,6 +36,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -73,6 +75,7 @@
                 opacity: 0;
                 transform: translateX(-10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateX(0);
@@ -167,6 +170,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Passwort zurücksetzen</h1>
@@ -206,4 +210,5 @@
         </form>
     </div>
 </body>
+
 </html>

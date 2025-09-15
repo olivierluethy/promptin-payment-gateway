@@ -93,7 +93,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Passwort erfolgreich geändert</h1>
+            <h1>Password successfully changed</h1>
         </div>
         <div class="content">
             @if (session('error'))
@@ -106,8 +106,8 @@
             <a href="{{ url('/login') }}" class="button" aria-label="Zum Login-Bereich navigieren">Zum Login</a>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} Deine App. Alle Rechte vorbehalten.</p>
-            <p>Bei Fragen kontaktiere uns unter <a href="mailto:support@example.com">support@example.com</a>.</p>
+            <p>&copy; {{ date('Y') }} PromptIn. Alle Rechte vorbehalten.</p>
+            <p>Bei Fragen kontaktiere uns unter <a href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a>.</p>
         </div>
     </div>
 </body>
