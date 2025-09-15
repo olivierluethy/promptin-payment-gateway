@@ -171,4 +171,36 @@ class AuthController extends Controller
             'email' => [__($status)]
         ]);
     }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        // Überprüfe, ob das aktuelle Passwort korrekt ist
+        if (!Hash::check($request->current_password, $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Das aktuelle Passwort ist falsch.'],
+            ]);
+        }
+
+        // Aktualisiere das Passwort
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        // Optional: Widerrufe alle bestehenden Tokens nach Passwortänderung
+        $user->tokens()->delete();
+        \DB::table('refresh_tokens')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        return response()->json([
+            'message' => 'Passwort erfolgreich geändert. Bitte melde dich erneut an.',
+        ]);
+    }
+
 }

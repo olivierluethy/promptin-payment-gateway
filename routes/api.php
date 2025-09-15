@@ -46,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Subscribe / Checkout with Stripe
     Route::post('/checkout/{planId}', [CheckoutController::class, 'checkout']);
+
+    // Change Password
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 });
 
 // Stripe Webhook (public, no auth needed)
