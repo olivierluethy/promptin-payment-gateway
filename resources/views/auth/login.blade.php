@@ -179,13 +179,12 @@
             </form>
             <p style="margin-top: 15px;">
                 <a href="{{ route('password.request') }}">Passwort vergessen?</a>
-
-
             </p>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} Deine App. Alle Rechte vorbehalten.</p>
-            <p>Bei Fragen kontaktiere uns unter <a href="mailto:support@example.com">support@example.com</a>.</p>
+            <p>&copy; {{ date('Y') }} PromptIn. Alle Rechte vorbehalten.</p>
+            <p>Bei Fragen kontaktiere uns unter <a
+                    href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a>.</p>
         </div>
     </div>
 </body>

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
+use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\DB;
 
 class WebAuthController extends Controller
@@ -100,5 +101,45 @@ class WebAuthController extends Controller
         DB::table('password_resets')->where('email', $request->email)->delete();
 
         return view('auth.password_reset_success', ['user' => $user]);
+    }
+
+    // Formular anzeigen
+    public function showForgotPasswordForm()
+    {
+        return view('auth.forgot_password');
+    }
+
+    // API zum Zurücksetzen des Passworts
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Benutzer mit dieser E-Mail existiert nicht.']
+            ]);
+        }
+
+        // Token erzeugen
+        $token = Str::random(60);
+
+        // Token in DB speichern (password_resets)
+        \DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'email' => $user->email,
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        // Mail verschicken
+        Mail::to($user->email)->send(new PasswordResetController($token, $user->email));
+
+        return redirect()->back()->with('status', 'Password reset email sent!');
     }
 }

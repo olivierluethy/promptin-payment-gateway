@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
+
 use App\Models\User;
 
 class PasswordResetController extends Controller
@@ -19,13 +22,33 @@ class PasswordResetController extends Controller
     // Mail mit Link senden
     public function sendResetLink(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'email' => 'required|email'
+        ]);
 
-        $status = Password::sendResetLink($request->only('email'));
+        $user = User::where('email', $request->email)->first();
 
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with(['status' => __($status)])
-            : back()->withErrors(['email' => __($status)]);
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Diese E-Mail-Adresse ist nicht registriert.']
+            ]);
+        }
+
+        $token = Str::random(60);
+
+        \DB::table('password_resets')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'email' => $user->email,
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        // Mail verschicken
+        Mail::to($user->email)->send(new ResetPasswordMail($token, $user->email));
+
+        return back()->with('status', 'Wir haben dir einen Link zum Zurücksetzen geschickt!');
     }
 
     // Formular neues Passwort mit Token
