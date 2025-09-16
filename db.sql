@@ -135,15 +135,15 @@ VALUES ('PromptIn Subscription', 'promptin_subscription', 'Abos für PromptIn');
 INSERT INTO plans (product_id, name, stripe_price_id, default_billing_type)
 VALUES 
 (1, 'Basic Monthly', 'price_1S24tdGCiPyXR7LX0IioJH6G', 'monthly'),
-(1, 'Basic Yearly',  'price_1S24v2GCiPyXR7LXjrEVd8Vv', 'yearly'),
+(1, 'Basic Yearly',  'price_1S85loGCiPyXR7LXiayiOGHz', 'yearly'),
 (1, 'Pro Monthly',   'price_1S24wnGCiPyXR7LXDBJXkvc6', 'monthly'),
 (1, 'Pro Yearly',    'price_1S24x7GCiPyXR7LXkVm8d8HH', 'yearly');
 
 
 -- Pläne einfügen (mit Stripe Price IDs) - Testing
-INSERT INTO plans (product_id, name, stripe_price_id, default_billing_type)
-VALUES 
-(1, 'Basic Monthly', 'price_1S273l7L878EJ8iQicYZYi0f', 'monthly'),
-(1, 'Basic Yearly',  'price_1S275P7L878EJ8iQwCxiAO80', 'yearly'),
-(1, 'Pro Monthly',   'price_1S275q7L878EJ8iQZYXVrApZ', 'monthly'),
-(1, 'Pro Yearly',    'price_1S276I7L878EJ8iQxTXWGAbv', 'yearly');
+-- INSERT INTO plans (product_id, name, stripe_price_id, default_billing_type)
+-- VALUES 
+-- (1, 'Basic Monthly', 'price_1S273l7L878EJ8iQicYZYi0f', 'monthly'),
+-- (1, 'Basic Yearly',  'price_1S275P7L878EJ8iQwCxiAO80', 'yearly'),
+-- (1, 'Pro Monthly',   'price_1S275q7L878EJ8iQZYXVrApZ', 'monthly'),
+-- (1, 'Pro Yearly',    'price_1S276I7L878EJ8iQxTXWGAbv', 'yearly');
