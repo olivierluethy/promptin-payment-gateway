@@ -9,6 +9,8 @@ use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\DB;
+use Stripe\StripeClient;
+use App\Models\Plan;
 
 class WebAuthController extends Controller
 {
@@ -141,5 +143,48 @@ class WebAuthController extends Controller
         Mail::to($user->email)->send(new PasswordResetController($token, $user->email));
 
         return redirect()->back()->with('status', 'Password reset email sent!');
+    }
+
+    public function checkout(Request $request, $planId)
+    {
+        // Benutzer aus der Session holen
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Bitte melde dich an, um fortzufahren.');
+        }
+
+        // Plan aus der Datenbank holen
+        $plan = Plan::findOrFail($planId);
+
+        // Stripe-Client initialisieren
+        $stripe = new StripeClient(env('STRIPE_SECRET'));
+
+        // Stripe Customer anlegen, falls nicht vorhanden
+        if (!$user->stripe_customer_id) {
+            $customer = $stripe->customers->create([
+                'email' => $user->email,
+                'name' => $user->name,
+            ]);
+            $user->stripe_customer_id = $customer->id;
+            $user->save();
+        }
+
+        // Checkout-Session erstellen
+        $session = $stripe->checkout->sessions->create([
+            'customer' => $user->stripe_customer_id,
+            'line_items' => [
+                [
+                    'price' => $plan->stripe_price_id,
+                    'quantity' => 1,
+                ],
+            ],
+            'mode' => 'subscription',
+            'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => config('app.url') . '/cancel',
+        ]);
+
+        // Weiterleitung zur Stripe-Checkout-Seite
+        return redirect($session->url);
     }
 }

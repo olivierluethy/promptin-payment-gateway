@@ -74,3 +74,8 @@ Route::get('/test-mail', function () {
     \Mail::to('business.olivierthomas@gmail.com')->send(new \App\Mail\TestMail());
     return 'Test email sent!';
 });
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [WebAuthController::class, 'dashboard'])->name('dashboard');
+    Route::post('/checkout/{planId}', [WebAuthController::class, 'checkout'])->name('web.checkout');
+});

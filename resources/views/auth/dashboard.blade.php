@@ -1,11 +1,56 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Benutzer-Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const durationButtons = document.querySelectorAll(".duration-btn");
+            const subscribeButtons = document.querySelectorAll(".subscribe-btn");
+
+            durationButtons.forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const plan = this.dataset.plan;
+                    const price = this.dataset.price;
+                    const checkout = this.dataset.checkout; // z.B. "/checkout/9" oder "/checkout/10"
+
+                    // Deactivate all buttons in this group
+                    this.parentElement.querySelectorAll(".duration-btn").forEach(b => b.classList.remove("active"));
+                    this.classList.add("active");
+
+                    // Update price smoothly
+                    const priceElem = this.closest(".card-body").querySelector(".plan-price");
+                    animatePrice(priceElem, parseFloat(price));
+
+                    // Update checkout form action
+                    const form = this.closest(".card-body").querySelector("form");
+                    form.setAttribute("action", checkout);
+                });
+            });
+
+            function animatePrice(elem, newPrice) {
+                let oldPrice = parseFloat(elem.textContent.replace(/[^\d.]/g, "")) || 0;
+                let start = null;
+                const duration = 500;
+
+                function step(timestamp) {
+                    if (!start) start = timestamp;
+                    const progress = Math.min((timestamp - start) / duration, 1);
+                    const current = oldPrice + (newPrice - oldPrice) * progress;
+                    elem.textContent = "€" + current.toFixed(2);
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+        });
+    </script>
+
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,60 +58,76 @@
             color: #333;
             margin: 0;
         }
+
         .navbar-brand {
             font-size: 1.75rem;
             font-weight: bold;
         }
+
         .dropdown-menu {
             min-width: 200px;
         }
+
         .subscription-card {
             transition: transform 0.3s ease;
         }
+
         .subscription-card:hover {
             transform: scale(1.05);
         }
+
         .card {
             border-radius: 10px;
         }
+
         .btn-success {
             background-color: #4CAF50;
             border-color: #4CAF50;
         }
+
         .btn-success:hover {
             background-color: #45a049;
         }
+
         .btn-danger {
             background-color: #ff4444;
         }
+
         .btn-danger:hover {
             background-color: #cc0000;
         }
+
         .footer {
             background-color: #f9f9f9;
             color: #777;
         }
+
         .footer a {
             color: #4CAF50;
         }
+
         .footer a:hover {
             text-decoration: underline;
         }
+
         @media (max-width: 576px) {
             .container {
                 padding: 15px;
             }
+
             .navbar-brand {
                 font-size: 1.25rem;
             }
         }
     </style>
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-success sticky-top shadow">
         <div class="container">
             <a class="navbar-brand" href="#">PromptIn</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
@@ -82,7 +143,8 @@
                     </li>
                 </ul>
                 <div class="dropdown">
-                    <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         {{ $user->name ?? 'Benutzer' }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn">
@@ -132,9 +194,10 @@
         @endif
 
         <div id="plans" class="row g-4 mb-5">
+            <!-- Free Plan -->
             <div class="col-lg-3 col-md-6">
                 <div class="card subscription-card h-100 animate__animated animate__fadeInUp">
-                    <div class="card-body">
+                    <div class="card-body text-center">
                         <h3 class="card-title fw-bold">Free</h3>
                         <p class="card-text fs-2 text-success">Kostenlos</p>
                         <p class="text-muted">Für immer kostenlos</p>
@@ -148,43 +211,69 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Basic Plan -->
             <div class="col-lg-3 col-md-6">
-                <div class="card subscription-card h-100 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
-                    <div class="card-body">
+                <div class="card subscription-card h-100 animate__animated animate__fadeInUp"
+                    style="animation-delay: 0.1s;">
+                    <div class="card-body text-center">
                         <h3 class="card-title fw-bold">Basic</h3>
-                        <p class="card-text fs-2 text-success">€{{ number_format(1, 2) }}</p>
-                        <p class="text-muted">pro Monat</p>
-                        <select class="form-select mb-3" aria-label="Dauer auswählen">
-                            <option value="1">1 Monat (€1)</option>
-                            <option value="12">12 Monate (€12)</option>
-                        </select>
+                        <p class="plan-price fs-2 text-success mb-0" data-base="1">€1.00</p>
+                        <p class="text-muted">Wähle Dauer:</p>
+                        <div class="btn-group mb-3" role="group">
+                            <button class="btn btn-outline-success duration-btn active" data-plan="basic"
+                                data-duration="1" data-price="1" data-checkout="{{ route('web.checkout', 9) }}">1
+                                Monat</button>
+                            <button class="btn btn-outline-success duration-btn" data-plan="basic" data-duration="12"
+                                data-price="12" data-checkout="{{ route('web.checkout', 10) }}">12 Monate</button>
+                        </div>
                         <ul class="list-group list-group-flush mb-3">
                             <li class="list-group-item border-0">Erweiterter API-Zugriff</li>
                             <li class="list-group-item border-0">5 Projekte</li>
                             <li class="list-group-item border-0">1 GB Speicher</li>
                             <li class="list-group-item border-0">E-Mail-Support</li>
                         </ul>
-                        <a href="{{ url('/checkout/1') }}" class="btn btn-success w-100">Abonnieren</a>
+                        <!-- Für den Basic-Plan -->
+                        <form action="{{ route('web.checkout', 9) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 subscribe-btn" data-plan="basic">
+                                Abonnieren
+                            </button>
+                        </form>
+
                     </div>
                 </div>
             </div>
+
+            <!-- Pro Plan -->
             <div class="col-lg-3 col-md-6">
-                <div class="card subscription-card h-100 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
-                    <div class="card-body">
+                <div class="card subscription-card h-100 animate__animated animate__fadeInUp"
+                    style="animation-delay: 0.2s;">
+                    <div class="card-body text-center">
                         <h3 class="card-title fw-bold">Pro</h3>
-                        <p class="card-text fs-2 text-success">€{{ number_format(5, 2) }}</p>
-                        <p class="text-muted">pro Monat</p>
-                        <select class="form-select mb-3" aria-label="Dauer auswählen">
-                            <option value="1">1 Monat (€5)</option>
-                            <option value="12">12 Monate (€60)</option>
-                        </select>
+                        <p class="plan-price fs-2 text-success mb-0" data-base="5">€5.00</p>
+                        <p class="text-muted">Wähle Dauer:</p>
+                        <div class="btn-group mb-3" role="group">
+                            <button class="btn btn-outline-success duration-btn active" data-plan="pro"
+                                data-duration="1" data-price="5" data-checkout="{{ route('web.checkout', 11) }}">1
+                                Monat</button>
+                            <button class="btn btn-outline-success duration-btn" data-plan="pro" data-duration="12"
+                                data-price="60" data-checkout="{{ route('web.checkout', 12) }}">12 Monate</button>
+                        </div>
                         <ul class="list-group list-group-flush mb-3">
                             <li class="list-group-item border-0">Unbegrenzter API-Zugriff</li>
                             <li class="list-group-item border-0">20 Projekte</li>
                             <li class="list-group-item border-0">10 GB Speicher</li>
                             <li class="list-group-item border-0">Priorisierter Support</li>
                         </ul>
-                        <a href="{{ url('/checkout/2') }}" class="btn btn-success w-100">Abonnieren</a>
+                        <!-- Für den Pro-Plan -->
+                        <form action="{{ route('web.checkout', 11) }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-success w-100 subscribe-btn" data-plan="pro">
+                                Abonnieren
+                            </button>
+                        </form>
+
                     </div>
                 </div>
             </div>
@@ -202,7 +291,8 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card shadow-sm text-center animate__animated animate__slideInUp" style="animation-delay: 0.1s;">
+                    <div class="card shadow-sm text-center animate__animated animate__slideInUp"
+                        style="animation-delay: 0.1s;">
                         <div class="card-body">
                             <p class="card-text text-muted">Aktive Projekte</p>
                             <p class="card-title fs-5 text-success">{{ $stats->activeProjects ?? '5' }}</p>
@@ -210,7 +300,8 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card shadow-sm text-center animate__animated animate__slideInUp" style="animation-delay: 0.2s;">
+                    <div class="card shadow-sm text-center animate__animated animate__slideInUp"
+                        style="animation-delay: 0.2s;">
                         <div class="card-body">
                             <p class="card-text text-muted">Speicher genutzt</p>
                             <p class="card-title fs-5 text-success">{{ $stats->storageUsed ?? '2.3 GB' }}</p>
@@ -218,7 +309,8 @@
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="card shadow-sm text-center animate__animated animate__slideInUp" style="animation-delay: 0.3s;">
+                    <div class="card shadow-sm text-center animate__animated animate__slideInUp"
+                        style="animation-delay: 0.3s;">
                         <div class="card-body">
                             <p class="card-text text-muted">Letzter Login</p>
                             <p class="card-title fs-5 text-success">{{ $stats->lastLogin ?? '2025-09-15' }}</p>
@@ -242,9 +334,11 @@
 
     <footer class="footer py-4 text-center">
         <p>&copy; {{ date('Y') }} PromptIn. Alle Rechte vorbehalten.</p>
-        <p>Bei Fragen kontaktiere uns unter <a href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a>.</p>
+        <p>Bei Fragen kontaktiere uns unter <a
+                href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a>.</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
