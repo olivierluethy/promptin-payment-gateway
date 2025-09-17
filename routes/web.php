@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\AuthController;
 
 // -----------------------------
 // Geschützte Routen (Session-basiert)
@@ -28,6 +29,11 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+// Register
+Route::post('/register', [WebAuthController::class, 'register'])
+    ->name('register')
+    ->middleware('throttle:10,1'); // Max. 10 Versuche pro Minute
 
 // Login (GET: Formular anzeigen, POST: Login absenden)
 Route::get('/login', [WebAuthController::class, 'showLoginForm'])->name('login');

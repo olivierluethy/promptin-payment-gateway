@@ -11,6 +11,8 @@ use App\Http\Controllers\PasswordResetController;
 use Illuminate\Support\Facades\DB;
 use Stripe\StripeClient;
 use App\Models\Plan;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeMail;
 
 class WebAuthController extends Controller
 {
@@ -37,6 +39,29 @@ class WebAuthController extends Controller
         throw ValidationException::withMessages([
             'email' => ['Die Anmeldedaten sind ungültig.'],
         ]);
+    }
+
+    public function register(Request $request)
+    {
+        // Validierung der Eingabedaten
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        // Benutzer erstellen
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        // E-Mail verschicken
+        Mail::to($user->email)->send(new WelcomeMail($user));
+
+        // Weiterleitung zum Dashboard mit Erfolgsmeldung
+        return redirect()->route('login');
     }
 
     public function logout(Request $request)

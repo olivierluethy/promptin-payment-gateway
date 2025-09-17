@@ -4,115 +4,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Login & Registrierung – PromptIn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+            background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
             color: #333;
         }
 
-        .container {
-            max-width: 400px;
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             overflow: hidden;
-            text-align: center;
+            width: 100%;
+            max-width: 450px;
         }
 
-        .header {
+        .card-header {
             background-color: #4CAF50;
-            color: #ffffff;
-            padding: 20px;
+            color: #fff;
+            text-align: center;
+            padding: 1.5rem;
         }
 
-        .header h1 {
+        .card-header h1 {
+            font-size: 1.75rem;
             margin: 0;
-            font-size: 24px;
-            font-weight: normal;
         }
 
-        .content {
-            padding: 30px;
+        .nav-tabs {
+            border: none;
+            justify-content: center;
+            margin-bottom: 1.5rem;
         }
 
-        .content h2 {
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 30px;
+            padding: 0.6rem 1.5rem;
+            font-weight: bold;
             color: #4CAF50;
-            font-size: 22px;
-            margin-bottom: 20px;
         }
 
-        .form-group {
+        .nav-tabs .nav-link.active {
+            background-color: #4CAF50;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .form-control:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 6px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-success {
+            background-color: #4CAF50;
+            border-color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .btn-success:hover {
+            background-color: #45a049;
+        }
+
+        .error-message {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
             margin-bottom: 15px;
             text-align: left;
         }
 
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #4CAF50;
-            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
-        }
-
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-bottom: 15px;
-            background-color: #ffe6e6;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .error-message.hidden {
-            display: none;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            background-color: #4CAF50;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-            border: none;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .button:hover {
-            background-color: #45a049;
-        }
-
         .footer {
-            background-color: #f9f9f9;
-            padding: 15px;
-            font-size: 14px;
+            text-align: center;
+            font-size: 0.9rem;
             color: #777;
+            margin-top: 1rem;
         }
 
         .footer a {
@@ -123,70 +98,104 @@
         .footer a:hover {
             text-decoration: underline;
         }
-
-        @media (max-width: 600px) {
-            .container {
-                margin: 20px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .content h2 {
-                font-size: 18px;
-            }
-        }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Anmeldung</h1>
+    <div class="card animate__animated animate__fadeInDown">
+        <div class="card-header">
+            <h1>PromptIn</h1>
         </div>
-        <div class="content">
-            <h2>Willkommen zurück</h2>
-            @if ($errors->any())
-                <div class="error-message">
-                    @foreach ($errors->all() as $error)
-                        <p>{{ $error }}</p>
-                    @endforeach
+        <div class="card-body p-4">
+
+            {{-- Tabs für Login & Register --}}
+            <ul class="nav nav-tabs" id="authTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login"
+                        type="button" role="tab">Login</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register"
+                        type="button" role="tab">Registrieren</button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                {{-- LOGIN --}}
+                <div class="tab-pane fade show active" id="login" role="tabpanel">
+                    <h5 class="text-center mb-3 text-success">Willkommen zurück 👋</h5>
+
+                    @if ($errors->any())
+                        <div class="error-message">
+                            @foreach ($errors->all() as $error)
+                                <p class="mb-0">{{ $error }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if (session('status'))
+                        <div class="alert alert-success text-center">
+                            {{ session('status') }}
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('login') }}">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-bold">E-Mail</label>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}" class="form-control"
+                                required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-bold">Passwort</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Anmelden</button>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <a href="{{ route('password.request') }}">Passwort vergessen?</a>
+                    </div>
                 </div>
-            @endif
-            @if (session('status'))
-                <div
-                    style="color: green; background-color: #e6ffe6; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
-                    {{ session('status') }}
+
+                {{-- REGISTER --}}
+                <div class="tab-pane fade" id="register" role="tabpanel">
+                    <h5 class="text-center mb-3 text-success">Konto erstellen ✨</h5>
+
+                    <form method="POST" action="{{ route('register') }}">
+                        @csrf
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-bold">Name</label>
+                            <input type="text" id="name" name="name" value="{{ old('name') }}" class="form-control"
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email_reg" class="form-label fw-bold">E-Mail</label>
+                            <input type="email" id="email_reg" name="email" value="{{ old('email') }}"
+                                class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password_reg" class="form-label fw-bold">Passwort</label>
+                            <input type="password" id="password_reg" name="password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password_confirmation" class="form-label fw-bold">Passwort bestätigen</label>
+                            <input type="password" id="password_confirmation" name="password_confirmation"
+                                class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Registrieren</button>
+                    </form>
                 </div>
-            @endif
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
-                <div class="form-group">
-                    <label for="email">E-Mail</label>
-                    <input type="email" id="email" name="email" value="{{ old('email') }}" required
-                        aria-label="E-Mail-Adresse eingeben">
-                </div>
-                <div class="form-group">
-                    <label for="password">Passwort</label>
-                    <input type="password" id="password" name="password" required aria-label="Passwort eingeben">
-                </div>
-                <button type="submit" class="button" aria-label="Anmelden">Anmelden</button>
-            </form>
-            <p style="margin-top: 15px;">
-                <a href="{{ route('password.request') }}">Passwort vergessen?</a>
-            </p>
+            </div>
         </div>
-        <div class="footer">
+
+        <div class="footer p-3">
             <p>&copy; {{ date('Y') }} PromptIn. Alle Rechte vorbehalten.</p>
-            <p>Bei Fragen kontaktiere uns unter <a
-                    href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a>.</p>
+            <p>Fragen? <a href="mailto:business.promptin@gmail.com">business.promptin@gmail.com</a></p>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

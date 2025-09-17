@@ -18,28 +18,26 @@ class AuthController extends Controller
     // Register
     public function register(Request $request)
     {
+        // Validierung der Eingabedaten
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
 
+        // Benutzer erstellen
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'password' => Hash::make($request->password),
         ]);
 
         // E-Mail verschicken
         Mail::to($user->email)->send(new WelcomeMail($user));
 
-        $token = $user->createToken('api-token')->plainTextToken;
-        $refreshToken = $this->generateRefreshToken($user);
-
+        // Rückgabe einer Bestätigung ohne Tokens
         return response()->json([
-            'access_token' => $token,
-            'refresh_token' => $refreshToken,
-            'expires_in' => 3600 // Access token expires in 1 hour
+            'message' => 'Registrierung erfolgreich! Bitte melde dich an.',
         ], 201);
     }
 

@@ -225,6 +225,10 @@
             <p class="info-text">
                 Nach Absenden erhältst du eine E-Mail mit einem Link zum Zurücksetzen deines Passworts.
             </p>
+
+            <p style="margin-top: 15px;">
+                <a href="{{ route('login') }}">Zurück zum Login</a>
+            </p>
         </div>
         <div class="footer">
             <p>&copy; {{ date('Y') }} PromptIn. Alle Rechte vorbehalten.</p>
