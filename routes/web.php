@@ -83,5 +83,9 @@ Route::get('/test-mail', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [WebAuthController::class, 'dashboard'])->name('dashboard');
+    Route::get('/settings', [WebAuthController::class, 'settings'])->name('settings');
+    Route::post('/settings', [WebAuthController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/settings/password', [WebAuthController::class, 'updatePassword'])->name('settings.password');
+    Route::delete('/settings', [WebAuthController::class, 'deleteAccount'])->name('settings.delete');
     Route::post('/checkout/{planId}', [WebAuthController::class, 'checkout'])->name('web.checkout');
 });

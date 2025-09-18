@@ -14,7 +14,7 @@ class CheckoutController extends Controller
 
         $plan = Plan::findOrFail($planId);
 
-        $stripe = new StripeClient(env('STRIPE_SECRET'));
+        $stripe = new StripeClient(config('services.stripe.secret'));
 
         // Stripe Customer anlegen, falls nicht vorhanden
         if (!$user->stripe_customer_id) {

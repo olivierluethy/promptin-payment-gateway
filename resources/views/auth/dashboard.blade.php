@@ -222,10 +222,10 @@
                         <p class="text-muted">Wähle Dauer:</p>
                         <div class="btn-group mb-3" role="group">
                             <button class="btn btn-outline-success duration-btn active" data-plan="basic"
-                                data-duration="1" data-price="1" data-checkout="{{ route('web.checkout', 9) }}">1
+                                data-duration="1" data-price="1" data-checkout="{{ route('web.checkout', 1) }}">1
                                 Monat</button>
                             <button class="btn btn-outline-success duration-btn" data-plan="basic" data-duration="12"
-                                data-price="12" data-checkout="{{ route('web.checkout', 10) }}">12 Monate</button>
+                                data-price="12" data-checkout="{{ route('web.checkout', 2) }}">12 Monate</button>
                         </div>
                         <ul class="list-group list-group-flush mb-3">
                             <li class="list-group-item border-0">Erweiterter API-Zugriff</li>
@@ -234,7 +234,7 @@
                             <li class="list-group-item border-0">E-Mail-Support</li>
                         </ul>
                         <!-- Für den Basic-Plan -->
-                        <form action="{{ route('web.checkout', 9) }}" method="POST">
+                        <form action="{{ route('web.checkout', 1) }}" method="POST">
                             @csrf
                             <button type="submit" class="btn btn-success w-100 subscribe-btn" data-plan="basic">
                                 Abonnieren
@@ -255,10 +255,10 @@
                         <p class="text-muted">Wähle Dauer:</p>
                         <div class="btn-group mb-3" role="group">
                             <button class="btn btn-outline-success duration-btn active" data-plan="pro"
-                                data-duration="1" data-price="5" data-checkout="{{ route('web.checkout', 11) }}">1
+                                data-duration="1" data-price="5" data-checkout="{{ route('web.checkout', 3) }}">1
                                 Monat</button>
                             <button class="btn btn-outline-success duration-btn" data-plan="pro" data-duration="12"
-                                data-price="60" data-checkout="{{ route('web.checkout', 12) }}">12 Monate</button>
+                                data-price="60" data-checkout="{{ route('web.checkout', 4) }}">12 Monate</button>
                         </div>
                         <ul class="list-group list-group-flush mb-3">
                             <li class="list-group-item border-0">Unbegrenzter API-Zugriff</li>
@@ -267,7 +267,7 @@
                             <li class="list-group-item border-0">Priorisierter Support</li>
                         </ul>
                         <!-- Für den Pro-Plan -->
-                        <form action="{{ route('web.checkout', 11) }}" method="POST">
+                        <form action="{{ route('web.checkout', 3) }}" method="POST">
                             @csrf
                             <button type="submit" class="btn btn-success w-100 subscribe-btn" data-plan="pro">
                                 Abonnieren

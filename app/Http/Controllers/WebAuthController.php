@@ -95,6 +95,88 @@ class WebAuthController extends Controller
         ]);
     }
 
+    public function settings(Request $request)
+    {
+        return view('auth.settings', [
+            'user' => $request->user(),
+        ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->save();
+
+        // Update session to reflect changes immediately
+        $request->session()->put('user', $user);
+
+        return redirect()->route('settings')->with('status', 'Profil erfolgreich aktualisiert.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Das aktuelle Passwort ist falsch.'],
+            ]);
+        }
+
+        if (Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Das neue Passwort darf nicht mit dem aktuellen Passwort übereinstimmen.'],
+            ]);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return redirect()->route('settings')->with('status', 'Passwort erfolgreich geändert.');
+    }
+
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        // Delete related data (e.g., subscriptions, projects)
+        DB::table('subscriptions')->where('user_id', $user->id)->delete();
+        // Add other related data deletions as needed (e.g., projects, API keys)
+
+        // Delete Stripe customer if exists
+        if ($user->stripe_customer_id) {
+            try {
+                $stripe = new StripeClient(env('STRIPE_SECRET'));
+                $stripe->customers->delete($user->stripe_customer_id);
+            } catch (\Exception $e) {
+                // Log error but proceed with deletion
+            }
+        }
+
+        // Delete user
+        $user->delete();
+
+        // Log out the user
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('status', 'Dein Konto wurde erfolgreich gelöscht.');
+    }
+
     public function resetPasswordConfirm(Request $request)
     {
         $request->validate([
