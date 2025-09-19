@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\User;
-use App\Http\Controllers\PasswordResetController;
-use Illuminate\Support\Facades\DB;
-use Stripe\StripeClient;
 use App\Models\Plan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\WelcomeMail;
+use App\Mail\EmailChangeVerificationMail;
+use Illuminate\Support\Str;
 
 class WebAuthController extends Controller
 {
@@ -43,24 +43,20 @@ class WebAuthController extends Controller
 
     public function register(Request $request)
     {
-        // Validierung der Eingabedaten
         $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
 
-        // Benutzer erstellen
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // E-Mail verschicken
         Mail::to($user->email)->send(new WelcomeMail($user));
 
-        // Weiterleitung zum Dashboard mit Erfolgsmeldung
         return redirect()->route('login');
     }
 
@@ -75,19 +71,13 @@ class WebAuthController extends Controller
     public function dashboard(Request $request)
     {
         $user = $request->user();
-
-        // Beispiel: aktive Subscription aus DB laden
         $subscription = DB::table('subscriptions')
             ->where('user_id', $user->id)
             ->where('status', 'active')
             ->first();
-
-        $plan = null;
-        if ($subscription) {
-            $plan = DB::table('plans')
-                ->where('id', $subscription->plan_id)
-                ->first();
-        }
+        $plan = $subscription ? DB::table('plans')
+            ->where('id', $subscription->plan_id)
+            ->first() : null;
 
         return view('auth.dashboard', [
             'user' => $user,
@@ -112,13 +102,63 @@ class WebAuthController extends Controller
         ]);
 
         $user->name = $request->name;
-        $user->email = $request->email;
+
+        if ($user->email !== $request->email) {
+            $token = Str::random(60);
+            DB::table('email_verifications')->updateOrInsert(
+                ['user_id' => $user->id],
+                [
+                    'new_email' => $request->email,
+                    'token' => Hash::make($token),
+                    'created_at' => now(),
+                ]
+            );
+
+            $verificationUrl = route('settings.verifyEmail', [
+                'token' => $token,
+                'email' => $request->email,
+            ]);
+
+            Mail::to($request->email)->send(new EmailChangeVerificationMail($user, $request->email, $verificationUrl));
+            $user->save();
+
+            return redirect()->route('settings')->with('status', 'Eine Bestätigungs-E-Mail wurde an deine neue Adresse gesendet. Bitte bestätige, um die Änderung abzuschließen.');
+        }
+
         $user->save();
 
-        // Update session to reflect changes immediately
         $request->session()->put('user', $user);
 
         return redirect()->route('settings')->with('status', 'Profil erfolgreich aktualisiert.');
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'email' => 'required|email',
+        ]);
+
+        $user = $request->user();
+
+        $verification = DB::table('email_verifications')
+            ->where('user_id', $user->id)
+            ->where('new_email', $request->email)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->first();
+
+        if (!$verification || !Hash::check($request->token, $verification->token)) {
+            return redirect()->route('settings')->with('error', 'Ungültiger oder abgelaufener Bestätigungslink.');
+        }
+
+        $user->email = $verification->new_email;
+        $user->save();
+
+        DB::table('email_verifications')->where('user_id', $user->id)->delete();
+
+        $request->session()->put('user', $user);
+
+        return redirect()->route('settings')->with('status', 'E-Mail-Adresse erfolgreich geändert.');
     }
 
     public function updatePassword(Request $request)
@@ -152,24 +192,21 @@ class WebAuthController extends Controller
     {
         $user = $request->user();
 
-        // Delete related data (e.g., subscriptions, projects)
         DB::table('subscriptions')->where('user_id', $user->id)->delete();
-        // Add other related data deletions as needed (e.g., projects, API keys)
 
-        // Delete Stripe customer if exists
-        if ($user->stripe_customer_id) {
+        if ($user->stripe_id) {
             try {
-                $stripe = new StripeClient(env('STRIPE_SECRET'));
-                $stripe->customers->delete($user->stripe_customer_id);
+                $user->deleteStripeCustomer();
             } catch (\Exception $e) {
-                // Log error but proceed with deletion
+                Log::error('Failed to delete Stripe customer', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
 
-        // Delete user
         $user->delete();
 
-        // Log out the user
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -212,13 +249,11 @@ class WebAuthController extends Controller
         return view('auth.password_reset_success', ['user' => $user]);
     }
 
-    // Formular anzeigen
     public function showForgotPasswordForm()
     {
         return view('auth.forgot_password');
     }
 
-    // API zum Zurücksetzen des Passworts
     public function resetPassword(Request $request)
     {
         $request->validate([
@@ -233,10 +268,7 @@ class WebAuthController extends Controller
             ]);
         }
 
-        // Token erzeugen
         $token = Str::random(60);
-
-        // Token in DB speichern (password_resets)
         \DB::table('password_resets')->updateOrInsert(
             ['email' => $user->email],
             [
@@ -246,52 +278,40 @@ class WebAuthController extends Controller
             ]
         );
 
-        // Mail verschicken
-        Mail::to($user->email)->send(new PasswordResetController($token, $user->email));
+        Mail::to($user->email)->send(new ResetPasswordMail($token, $user->email));
 
         return redirect()->back()->with('status', 'Password reset email sent!');
     }
 
     public function checkout(Request $request, $planId)
     {
-        // Benutzer aus der Session holen
         $user = Auth::user();
 
         if (!$user) {
             return redirect()->route('login')->with('error', 'Bitte melde dich an, um fortzufahren.');
         }
 
-        // Plan aus der Datenbank holen
         $plan = Plan::findOrFail($planId);
 
-        // Stripe-Client initialisieren
-        $stripe = new StripeClient(env('STRIPE_SECRET'));
+        try {
+            $checkoutSession = $user->newSubscription('default', $plan->stripe_price_id)
+                ->checkout([
+                    'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => config('app.url') . '/cancel',
+                    'metadata' => [
+                        'user_id' => $user->id,
+                        'plan_id' => $plan->id,
+                    ],
+                ]);
 
-        // Stripe Customer anlegen, falls nicht vorhanden
-        if (!$user->stripe_customer_id) {
-            $customer = $stripe->customers->create([
-                'email' => $user->email,
-                'name' => $user->name,
+            return redirect($checkoutSession->url);
+        } catch (\Exception $e) {
+            Log::error('Checkout session creation failed', [
+                'user_id' => $user->id,
+                'plan_id' => $planId,
+                'error' => $e->getMessage(),
             ]);
-            $user->stripe_customer_id = $customer->id;
-            $user->save();
+            return redirect()->route('dashboard')->with('error', 'Fehler beim Erstellen der Zahlungssitzung.');
         }
-
-        // Checkout-Session erstellen
-        $session = $stripe->checkout->sessions->create([
-            'customer' => $user->stripe_customer_id,
-            'line_items' => [
-                [
-                    'price' => $plan->stripe_price_id,
-                    'quantity' => 1,
-                ],
-            ],
-            'mode' => 'subscription',
-            'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => config('app.url') . '/cancel',
-        ]);
-
-        // Weiterleitung zur Stripe-Checkout-Seite
-        return redirect($session->url);
     }
 }

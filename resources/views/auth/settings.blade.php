@@ -154,6 +154,7 @@
                             <label for="email" class="form-label">E-Mail-Adresse</label>
                             <input type="email" class="form-control" id="email" name="email" value="{{ $user->email }}"
                                 required>
+                            <small class="form-text text-muted">Nach dem Ändern der E-Mail-Adresse erhältst du eine Bestätigungs-E-Mail.</small>
                         </div>
                         <button type="submit" class="btn btn-success w-100">Änderungen speichern</button>
                     </form>

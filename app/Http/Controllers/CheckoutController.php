@@ -3,82 +3,85 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Stripe\StripeClient;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Cashier;
 use App\Models\Plan;
+use App\Models\Subscription;
 
 class CheckoutController extends Controller
 {
     public function checkout(Request $request, $planId)
     {
-        $user = $request->user();
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Bitte melde dich an, um fortzufahren.'], 401);
+        }
 
         $plan = Plan::findOrFail($planId);
 
-        $stripe = new StripeClient(config('services.stripe.secret'));
+        try {
+            $checkoutSession = $user->newSubscription('default', $plan->stripe_price_id)
+                ->checkout([
+                    'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => config('app.url') . '/cancel',
+                    'metadata' => [
+                        'user_id' => $user->id,
+                        'plan_id' => $plan->id,
+                    ],
+                ]);
 
-        // Stripe Customer anlegen, falls nicht vorhanden
-        if (!$user->stripe_customer_id) {
-            $customer = $stripe->customers->create([
-                'email' => $user->email,
-                'name' => $user->name,
+            return response()->json([
+                'checkout_url' => $checkoutSession->url,
             ]);
-            $user->stripe_customer_id = $customer->id;
-            $user->save();
+        } catch (\Exception $e) {
+            Log::error('Checkout session creation failed', [
+                'user_id' => $user->id,
+                'plan_id' => $planId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Fehler beim Erstellen der Zahlungssitzung.'], 500);
         }
-
-        // Checkout Session erstellen
-        $session = $stripe->checkout->sessions->create([
-            'customer' => $user->stripe_customer_id,
-            'line_items' => [
-                [
-                    'price' => $plan->stripe_price_id,
-                    'quantity' => 1,
-                ]
-            ],
-            'mode' => 'subscription',
-            'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => config('app.url') . '/cancel',
-        ]);
-
-        return response()->json([
-            'checkout_url' => $session->url,
-        ]);
     }
 
-    /**
-     * Success Page für Frontend
-     */
     public function success(Request $request)
     {
         $sessionId = $request->query('session_id');
-
-        $stripe = new StripeClient(env('STRIPE_SECRET'));
-        $session = $stripe->checkout->sessions->retrieve($sessionId, [
-            'expand' => ['subscription']
-        ]);
-
-        $user = $request->user();
-        $plan = Plan::where('stripe_price_id', $session->line_items->data[0]->price->id ?? null)->first();
-
-        if ($plan && $session->subscription) {
-            $user->subscriptions()->create([
-                'plan_id' => $plan->id,
-                'status' => 'active',
-                'starts_at' => now(),
-                'expires_at' => null, // ggf. aus Stripe-Daten ableiten
-            ]);
+        if (!$sessionId) {
+            return redirect()->route('dashboard')->with('error', 'Ungültige Zahlungssitzung.');
         }
 
-        return view('checkout.success', [
-            'message' => 'Vielen Dank für Ihren Einkauf!',
-            'session_id' => $sessionId,
-        ]);
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Bitte melde dich an, um fortzufahren.');
+        }
+
+        try {
+            $session = Cashier::stripe()->checkout->sessions->retrieve($sessionId);
+            if ($session->customer !== $user->stripe_id) {
+                Log::error('Session customer mismatch', [
+                    'user_id' => $user->id,
+                    'session_customer' => $session->customer,
+                    'user_stripe_id' => $user->stripe_id,
+                ]);
+                return redirect()->route('dashboard')->with('error', 'Ungültige Zahlungssitzung.');
+            }
+
+            // Subscription wird über Webhook aktualisiert, daher hier nur Bestätigung anzeigen
+            return view('checkout.success', [
+                'message' => 'Vielen Dank für Ihren Einkauf! Dein Abonnement ist aktiv.',
+                'session_id' => $sessionId,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Checkout success processing failed', [
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+            return redirect()->route('dashboard')->with('error', 'Fehler beim Verarbeiten der Zahlung.');
+        }
     }
 
-
-    /**
-     * Cancel Page (optional)
-     */
     public function cancel()
     {
         return view('checkout.cancel', [

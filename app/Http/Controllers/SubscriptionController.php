@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Plan;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -20,12 +21,25 @@ class SubscriptionController extends Controller
         $user = $request->user();
         $plan = Plan::findOrFail($planId);
 
-        if (!$user->stripe_id) {
-            $user->createAsStripeCustomer();
+        try {
+            $checkoutSession = $user->newSubscription('default', $plan->stripe_price_id)
+                ->checkout([
+                    'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => config('app.url') . '/cancel',
+                    'metadata' => [
+                        'user_id' => $user->id,
+                        'plan_id' => $plan->id,
+                    ],
+                ]);
+
+            return response()->json(['url' => $checkoutSession->url]);
+        } catch (\Exception $e) {
+            Log::error('Checkout session creation failed', [
+                'user_id' => $user->id,
+                'plan_id' => $planId,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['error' => 'Fehler beim Erstellen der Zahlungssitzung.'], 500);
         }
-
-        $checkoutSession = $user->checkoutCharge($plan->stripe_price_id);
-
-        return response()->json(['url' => $checkoutSession->url]);
     }
 }

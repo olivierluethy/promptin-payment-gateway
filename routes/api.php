@@ -7,6 +7,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\StripeWebhookController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\WebhookController;
 
 // -----------------------------
 // Public Routes
@@ -52,4 +53,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Stripe Webhook (public, no auth needed)
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
+Route::post('/stripe/webhook', [WebhookController::class, 'handle']);

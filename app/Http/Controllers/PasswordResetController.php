@@ -35,7 +35,6 @@ class PasswordResetController extends Controller
         }
 
         $token = Str::random(60);
-
         \DB::table('password_resets')->updateOrInsert(
             ['email' => $user->email],
             [
@@ -45,7 +44,6 @@ class PasswordResetController extends Controller
             ]
         );
 
-        // Mail verschicken
         Mail::to($user->email)->send(new ResetPasswordMail($token, $user->email));
 
         return back()->with('status', 'Wir haben dir einen Link zum Zurücksetzen geschickt!');
