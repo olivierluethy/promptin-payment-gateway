@@ -16,6 +16,7 @@ class WebhookController extends CashierWebhookController
      */
     public function handle($request)
     {
+        var_dump($request);die;
         return parent::handleWebhook($request);
     }
 
