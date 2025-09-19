@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Cashier;
 use App\Models\Plan;
-use App\Models\Subscription;
 
 class CheckoutController extends Controller
 {
@@ -20,19 +19,13 @@ class CheckoutController extends Controller
 
         $plan = Plan::findOrFail($planId);
 
-        if (!$user->stripe_customer_id) {
-            // Create a Stripe customer if it doesn't exist
-            $stripeCustomer = \Stripe\Customer::create([
-                'email' => $user->email,
-                'name' => $user->name,
-            ]);
-
-            // Save the Stripe customer ID to the user's record
-            $user->stripe_customer_id = $stripeCustomer->id;
-            $user->save();
-        }
-
         try {
+            // Ensure the Stripe customer exists
+            if (!$user->hasStripeId()) {
+                $user->createAsStripeCustomer();
+            }
+
+            // Create a checkout session via Cashier
             $checkoutSession = $user->newSubscription('default', $plan->stripe_price_id)
                 ->checkout([
                     'success_url' => config('app.url') . '/success?session_id={CHECKOUT_SESSION_ID}',
@@ -70,6 +63,7 @@ class CheckoutController extends Controller
 
         try {
             $session = Cashier::stripe()->checkout->sessions->retrieve($sessionId);
+
             if ($session->customer !== $user->stripe_id) {
                 Log::error('Session customer mismatch', [
                     'user_id' => $user->id,
@@ -79,7 +73,7 @@ class CheckoutController extends Controller
                 return redirect()->route('dashboard')->with('error', 'Ungültige Zahlungssitzung.');
             }
 
-            // Subscription wird über Webhook aktualisiert, daher hier nur Bestätigung anzeigen
+            // Subscription will be updated via webhook → just show confirmation
             return view('checkout.success', [
                 'message' => 'Vielen Dank für Ihren Einkauf! Dein Abonnement ist aktiv.',
                 'session_id' => $sessionId,
