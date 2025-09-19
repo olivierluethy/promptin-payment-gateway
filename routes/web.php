@@ -15,7 +15,8 @@ Route::get('/cancel', [CheckoutController::class, 'cancel'])->name('checkout.can
 
 // Webhook-Route mit stripe.webhook-Middleware
 Route::post('/stripe/webhook', [WebhookController::class, 'handle'])
-    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->middleware(StripeWebhook::class);
 
 
 Route::middleware(['auth'])->group(function () {

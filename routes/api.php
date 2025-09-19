@@ -53,4 +53,4 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Stripe Webhook (public, no auth needed)
-Route::post('/stripe/webhook', [WebhookController::class, 'handle']);
+// Route::post('/stripe/webhook', [WebhookController::class, 'handle']);
