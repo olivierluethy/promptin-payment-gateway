@@ -20,6 +20,18 @@ class CheckoutController extends Controller
 
         $plan = Plan::findOrFail($planId);
 
+        if (!$user->stripe_customer_id) {
+            // Create a Stripe customer if it doesn't exist
+            $stripeCustomer = \Stripe\Customer::create([
+                'email' => $user->email,
+                'name' => $user->name,
+            ]);
+
+            // Save the Stripe customer ID to the user's record
+            $user->stripe_customer_id = $stripeCustomer->id;
+            $user->save();
+        }
+
         try {
             $checkoutSession = $user->newSubscription('default', $plan->stripe_price_id)
                 ->checkout([
