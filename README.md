@@ -1,64 +1,140 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+<div align="center">
+  <h1>Promptin Payment Gateway</h1>
+  <p><b>Stripe payments and subscriptions backend for Promptin.</b><br/>A Laravel 12 API and web app that handles checkout, plans, subscriptions, webhooks and token-based auth.</p>
+  <p>
+    <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+    <img alt="Laravel 12" src="https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white">
+    <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white">
+    <img alt="Stripe" src="https://img.shields.io/badge/Stripe-Cashier-635BFF?logo=stripe&logoColor=white">
+  </p>
+</div>
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+---
 
-## About Laravel
+The payment and subscription backend for the **Promptin** product. It wraps Stripe
+through [Laravel Cashier](https://laravel.com/docs/billing) to create checkout
+sessions, expose products and plans, manage subscriptions and process Stripe webhooks.
+It ships both a token-based JSON API (authenticated with Laravel Sanctum) for external
+clients and a set of server-rendered Blade views for auth and checkout flows, including
+registration, login, password reset and email verification with transactional emails.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Stripe Checkout** via Laravel Cashier — hosted checkout sessions per plan, with
+  success and cancel return pages.
+- **Products, plans and subscriptions** — models and endpoints for listing products and
+  plans and for viewing a user's subscriptions.
+- **Stripe webhooks** — a dedicated webhook endpoint (CSRF-exempt, signature-verified
+  middleware) to keep subscription state in sync.
+- **Token API auth** — registration, login, logout, token refresh and token validation
+  with [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access tokens.
+- **Account flows** — password reset, email-change verification and password change.
+- **Transactional email** — welcome, password-reset and email-verification mails
+  (Blade-templated).
+- **Web UI** — Blade views for login, registration, dashboard, settings and the
+  checkout result pages.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tech stack
 
-## Learning Laravel
+- [Laravel 12](https://laravel.com/) (PHP 8.2+)
+- [Laravel Cashier](https://laravel.com/docs/billing) 15 + [stripe-php](https://github.com/stripe/stripe-php) 16
+- [Laravel Sanctum](https://laravel.com/docs/sanctum) 4 for API tokens
+- Blade views, Vite + Tailwind for assets
+- SQLite by default (any Laravel-supported database works); database sessions, cache and queue
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Getting started
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Requirements
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.2+ and [Composer](https://getcomposer.org/)
+- Node.js and npm (for front-end assets)
+- A [Stripe](https://stripe.com/) account with API keys
 
-## Laravel Sponsors
+### 1. Install
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+```
 
-### Premium Partners
+### 2. Configure environment
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Set your database and mail settings in `.env`. By default the app uses SQLite — create
+the file with:
 
-## Contributing
+```bash
+touch database/database.sqlite
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Add your Stripe credentials (read by Cashier via `config/services.php` /
+`config/cashier`):
 
-## Code of Conduct
+```dotenv
+STRIPE_KEY=pk_test_...              # publishable key
+STRIPE_SECRET=sk_test_...           # secret key
+STRIPE_WEBHOOK_SECRET=whsec_...     # from `stripe listen` or the dashboard
+CASHIER_CURRENCY=chf                # optional, defaults to usd
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Configure the mailer for the account and verification emails (during development
+`MAIL_MAILER=log` writes them to `storage/logs`).
 
-## Security Vulnerabilities
+### 3. Migrate
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan migrate
+```
+
+This creates the application tables plus the Cashier and Sanctum tables. A SQL schema
+snapshot is also available under `database/`.
+
+### 4. Run
+
+```bash
+composer run dev      # serves the app, queue worker, logs and Vite together
+# or individually:
+php artisan serve
+npm run dev
+```
+
+### 5. Forward Stripe webhooks (local development)
+
+```bash
+stripe listen --forward-to localhost:8000/stripe/webhook
+```
+
+Use the signing secret it prints as `STRIPE_WEBHOOK_SECRET`.
+
+## API endpoints
+
+Base path: `/api`. Authenticated routes require a Sanctum bearer token
+(`Authorization: Bearer <token>`).
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| POST | `/register` | – | Create an account, return a token |
+| POST | `/login` | – | Log in, return a token |
+| POST | `/password-reset` | – | Request a password reset |
+| POST | `/refresh` | – | Refresh an access token |
+| GET | `/products` | – | List products and plans |
+| GET | `/me` | token | Current user |
+| POST | `/logout` | token | Revoke the current token |
+| GET | `/validate-token` | token | Validate the current token |
+| GET | `/subscriptions` | token | List the user's subscriptions |
+| POST | `/checkout/{planId}` | token | Start a Stripe checkout for a plan |
+| POST | `/change-password` | token | Change password |
+
+Web routes include `/login`, `/register`, `/dashboard`, `/settings`, the
+`/checkout/{planId}` flow with `/success` and `/cancel`, the password-reset pages, and
+`POST /stripe/webhook` for Stripe events.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Released under the [MIT License](LICENSE) © 2026 Olivier Lüthy. You're free to use, modify and distribute this
+software, including commercially, as long as the copyright notice and license are included.
 
+## Author
 
-php artisan serve
+Built by **Olivier Lüthy** — [GitHub](https://github.com/olivierluethy).
